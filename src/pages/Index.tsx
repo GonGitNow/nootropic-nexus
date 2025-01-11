@@ -2,9 +2,10 @@ import { SearchBar } from "@/components/SearchBar";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { NootropicCard } from "@/components/NootropicCard";
 import { NootropicStack } from "@/components/NootropicStack";
+import { CreateStackDialog } from "@/components/CreateStackDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 
-// Mock data for nootropics (existing)
 const mockNootropics = [
   {
     name: "Piracetam",
@@ -26,32 +27,63 @@ const mockNootropics = [
   }
 ];
 
-// Mock data for stacks
-const mockStacks = [
+// Updated mock stacks with ratings
+const initialMockStacks = [
   {
     name: "Focus Stack",
     components: ["Caffeine", "L-Theanine", "Alpha GPC"],
     benefits: ["Enhanced focus", "Reduced jitters", "Improved memory"],
     description: "A classic stack for improved focus and productivity without the common side effects of caffeine alone.",
-    imageUrl: "/placeholder.svg"
+    imageUrl: "/placeholder.svg",
+    rating: 4.5,
+    totalRatings: 128
   },
   {
     name: "Memory Stack",
     components: ["Piracetam", "CDP-Choline", "Lion's Mane"],
     benefits: ["Better memory retention", "Enhanced learning", "Neuroprotection"],
     description: "Comprehensive stack designed to optimize memory formation and recall while supporting brain health.",
-    imageUrl: "/placeholder.svg"
+    imageUrl: "/placeholder.svg",
+    rating: 4.2,
+    totalRatings: 95
   },
   {
     name: "Mood Stack",
     components: ["Rhodiola Rosea", "L-Tyrosine", "B-Complex"],
     benefits: ["Mood enhancement", "Stress reduction", "Mental clarity"],
     description: "A balanced combination for mood optimization and stress management.",
-    imageUrl: "/placeholder.svg"
+    imageUrl: "/placeholder.svg",
+    rating: 4.7,
+    totalRatings: 156
   }
 ];
 
 const Index = () => {
+  const [stacks, setStacks] = useState(initialMockStacks);
+  const [sortBy, setSortBy] = useState<"recent" | "rating">("recent");
+
+  const handleCreateStack = (newStack: {
+    name: string;
+    components: string[];
+    benefits: string[];
+    description: string;
+  }) => {
+    const stackWithDefaults = {
+      ...newStack,
+      imageUrl: "/placeholder.svg",
+      rating: 0,
+      totalRatings: 0,
+    };
+    setStacks(prev => [stackWithDefaults, ...prev]);
+  };
+
+  const sortedStacks = [...stacks].sort((a, b) => {
+    if (sortBy === "rating") {
+      return b.rating - a.rating;
+    }
+    return 0; // Keep original order for "recent"
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -87,8 +119,19 @@ const Index = () => {
               </div>
             </TabsContent>
             <TabsContent value="stacks">
+              <div className="flex justify-between items-center mb-6">
+                <CreateStackDialog onStackCreate={handleCreateStack} />
+                <select
+                  className="border rounded-md px-3 py-2"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "recent" | "rating")}
+                >
+                  <option value="recent">Most Recent</option>
+                  <option value="rating">Highest Rated</option>
+                </select>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockStacks.map((stack, index) => (
+                {sortedStacks.map((stack, index) => (
                   <NootropicStack key={index} {...stack} />
                 ))}
               </div>

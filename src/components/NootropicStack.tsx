@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Star } from "lucide-react";
 
 interface NootropicStackProps {
   name: string;
@@ -6,13 +8,55 @@ interface NootropicStackProps {
   benefits: string[];
   description: string;
   imageUrl?: string;
+  rating?: number;
+  totalRatings?: number;
 }
 
-export const NootropicStack = ({ name, components, benefits, description, imageUrl }: NootropicStackProps) => {
+export const NootropicStack = ({ 
+  name, 
+  components, 
+  benefits, 
+  description, 
+  imageUrl,
+  rating = 0,
+  totalRatings = 0 
+}: NootropicStackProps) => {
+  const [currentRating, setCurrentRating] = useState(rating);
+  const [ratingCount, setRatingCount] = useState(totalRatings);
+
+  const handleRating = (newRating: number) => {
+    // This would typically make an API call to update the rating
+    setCurrentRating((prevRating) => {
+      const updatedRating = (prevRating * ratingCount + newRating) / (ratingCount + 1);
+      return Number(updatedRating.toFixed(1));
+    });
+    setRatingCount(prev => prev + 1);
+  };
+
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 animate-fade-in">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-xl font-bold">{name}</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl font-bold">{name}</CardTitle>
+          <div className="flex items-center space-x-2">
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-5 w-5 cursor-pointer ${
+                    star <= Math.round(currentRating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
+                  }`}
+                  onClick={() => handleRating(star)}
+                />
+              ))}
+            </div>
+            <span className="text-sm text-gray-500">
+              ({currentRating.toFixed(1)}) {ratingCount} ratings
+            </span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {imageUrl && (
