@@ -35,10 +35,10 @@ export const NootropicStack = ({
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 animate-fade-in">
       <CardHeader className="space-y-1">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <CardTitle className="text-xl font-bold">{name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="flex">
+          <div className="flex items-center gap-1 shrink-0">
+            <div className="flex shrink-0">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
@@ -51,9 +51,9 @@ export const NootropicStack = ({
                 />
               ))}
             </div>
-            <div className="text-sm text-gray-500 whitespace-nowrap min-w-[80px]">
+            <span className="text-sm text-gray-500 shrink-0">
               ({currentRating.toFixed(1)}) {ratingCount}
-            </div>
+            </span>
           </div>
         </div>
       </CardHeader>
