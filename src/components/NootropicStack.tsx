@@ -25,7 +25,6 @@ export const NootropicStack = ({
   const [ratingCount, setRatingCount] = useState(totalRatings);
 
   const handleRating = (newRating: number) => {
-    // This would typically make an API call to update the rating
     setCurrentRating((prevRating) => {
       const updatedRating = (prevRating * ratingCount + newRating) / (ratingCount + 1);
       return Number(updatedRating.toFixed(1));
@@ -38,7 +37,7 @@ export const NootropicStack = ({
       <CardHeader className="space-y-1">
         <div className="flex justify-between items-center">
           <CardTitle className="text-xl font-bold">{name}</CardTitle>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
@@ -52,9 +51,9 @@ export const NootropicStack = ({
                 />
               ))}
             </div>
-            <span className="text-sm text-gray-500">
-              ({currentRating.toFixed(1)}) {ratingCount} ratings
-            </span>
+            <div className="text-sm text-gray-500 whitespace-nowrap min-w-[80px]">
+              ({currentRating.toFixed(1)}) {ratingCount}
+            </div>
           </div>
         </div>
       </CardHeader>
