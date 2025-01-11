@@ -1,8 +1,10 @@
 import { SearchBar } from "@/components/SearchBar";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { NootropicCard } from "@/components/NootropicCard";
+import { NootropicStack } from "@/components/NootropicStack";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// This will be replaced with actual data from MongoDB
+// Mock data for nootropics (existing)
 const mockNootropics = [
   {
     name: "Piracetam",
@@ -24,6 +26,31 @@ const mockNootropics = [
   }
 ];
 
+// Mock data for stacks
+const mockStacks = [
+  {
+    name: "Focus Stack",
+    components: ["Caffeine", "L-Theanine", "Alpha GPC"],
+    benefits: ["Enhanced focus", "Reduced jitters", "Improved memory"],
+    description: "A classic stack for improved focus and productivity without the common side effects of caffeine alone.",
+    imageUrl: "/placeholder.svg"
+  },
+  {
+    name: "Memory Stack",
+    components: ["Piracetam", "CDP-Choline", "Lion's Mane"],
+    benefits: ["Better memory retention", "Enhanced learning", "Neuroprotection"],
+    description: "Comprehensive stack designed to optimize memory formation and recall while supporting brain health.",
+    imageUrl: "/placeholder.svg"
+  },
+  {
+    name: "Mood Stack",
+    components: ["Rhodiola Rosea", "L-Tyrosine", "B-Complex"],
+    benefits: ["Mood enhancement", "Stress reduction", "Mental clarity"],
+    description: "A balanced combination for mood optimization and stress management.",
+    imageUrl: "/placeholder.svg"
+  }
+];
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -34,7 +61,7 @@ const Index = () => {
             Nootropics Database
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Explore and learn about cognitive enhancement supplements
+            Explore and learn about cognitive enhancement supplements and stacks
           </p>
           <div className="flex justify-center">
             <SearchBar />
@@ -47,11 +74,26 @@ const Index = () => {
         <FilterSidebar />
         
         <main className="flex-1 container py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockNootropics.map((nootropic, index) => (
-              <NootropicCard key={index} {...nootropic} />
-            ))}
-          </div>
+          <Tabs defaultValue="nootropics" className="mb-8">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+              <TabsTrigger value="nootropics">Individual Nootropics</TabsTrigger>
+              <TabsTrigger value="stacks">Stacks</TabsTrigger>
+            </TabsList>
+            <TabsContent value="nootropics">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mockNootropics.map((nootropic, index) => (
+                  <NootropicCard key={index} {...nootropic} />
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="stacks">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mockStacks.map((stack, index) => (
+                  <NootropicStack key={index} {...stack} />
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </div>
