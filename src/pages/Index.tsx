@@ -4,85 +4,141 @@ import { NootropicCard } from "@/components/NootropicCard";
 import { NootropicStack } from "@/components/NootropicStack";
 import { CreateStackDialog } from "@/components/CreateStackDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
-
-const mockNootropics = [
-  {
-    name: "Piracetam",
-    category: "Racetams",
-    benefits: ["Memory enhancement", "Cognitive function", "Neuroprotection"],
-    imageUrl: "/placeholder.svg"
-  },
-  {
-    name: "Lion's Mane",
-    category: "Adaptogens",
-    benefits: ["Neural growth", "Memory improvement", "Anti-inflammatory"],
-    imageUrl: "/placeholder.svg"
-  },
-  {
-    name: "Alpha GPC",
-    category: "Cholinergics",
-    benefits: ["Memory enhancement", "Focus improvement", "Brain health"],
-    imageUrl: "/placeholder.svg"
-  }
-];
-
-// Updated mock stacks with ratings
-const initialMockStacks = [
-  {
-    name: "Focus Stack",
-    components: ["Caffeine", "L-Theanine", "Alpha GPC"],
-    benefits: ["Enhanced focus", "Reduced jitters", "Improved memory"],
-    description: "A classic stack for improved focus and productivity without the common side effects of caffeine alone.",
-    imageUrl: "/placeholder.svg",
-    rating: 4.5,
-    totalRatings: 128
-  },
-  {
-    name: "Memory Stack",
-    components: ["Piracetam", "CDP-Choline", "Lion's Mane"],
-    benefits: ["Better memory retention", "Enhanced learning", "Neuroprotection"],
-    description: "Comprehensive stack designed to optimize memory formation and recall while supporting brain health.",
-    imageUrl: "/placeholder.svg",
-    rating: 4.2,
-    totalRatings: 95
-  },
-  {
-    name: "Mood Stack",
-    components: ["Rhodiola Rosea", "L-Tyrosine", "B-Complex"],
-    benefits: ["Mood enhancement", "Stress reduction", "Mental clarity"],
-    description: "A balanced combination for mood optimization and stress management.",
-    imageUrl: "/placeholder.svg",
-    rating: 4.7,
-    totalRatings: 156
-  }
-];
+import { useState, useEffect } from "react";
+import { api, Nootropic, Stack } from "@/lib/api";
+import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
-  const [stacks, setStacks] = useState(initialMockStacks);
+  const [nootropics, setNootropics] = useState<Nootropic[]>([]);
+  const [filteredNootropics, setFilteredNootropics] = useState<Nootropic[]>([]);
+  const [stacks, setStacks] = useState<Stack[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"recent" | "rating">("recent");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const handleCreateStack = (newStack: {
-    name: string;
-    components: string[];
-    benefits: string[];
-    description: string;
-  }) => {
-    const stackWithDefaults = {
-      ...newStack,
-      imageUrl: "/placeholder.svg",
-      rating: 0,
-      totalRatings: 0,
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [nootropicsData, stacksData] = await Promise.all([
+          api.nootropics.getAll(),
+          api.stacks.getAll()
+        ]);
+        setNootropics(nootropicsData);
+        setFilteredNootropics(nootropicsData);
+        setStacks(stacksData);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch data');
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-    setStacks(prev => [stackWithDefaults, ...prev]);
+
+    fetchData();
+  }, []);
+
+  const handleSearch = (query: string) => {
+    if (!query.trim()) {
+      filterNootropics('', selectedCategories);
+      return;
+    }
+
+    filterNootropics(query, selectedCategories);
+  };
+
+  const handleCategoryFilter = (categories: string[]) => {
+    setSelectedCategories(categories);
+    filterNootropics('', categories);
+  };
+
+  const filterNootropics = (searchTerm: string, categories: string[]) => {
+    let filtered = nootropics;
+
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter((nootropic) => {
+        return (
+          nootropic.substanceName.toLowerCase().includes(term) ||
+          nootropic.category.some(cat => cat.toLowerCase().includes(term)) ||
+          nootropic.benefits.some(benefit => benefit.toLowerCase().includes(term))
+        );
+      });
+    }
+
+    // Apply category filter
+    if (categories.length > 0) {
+      filtered = filtered.filter((nootropic) =>
+        nootropic.category.some(cat => categories.includes(cat))
+      );
+    }
+
+    setFilteredNootropics(filtered);
+  };
+
+  const handleCreateStack = async (stackData: Omit<Stack, '_id' | 'totalRatings' | 'averageRating' | 'ratings' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const newStack = await api.stacks.create(stackData);
+      setStacks(prev => [newStack, ...prev]);
+      toast({
+        title: "Success",
+        description: "Stack created successfully",
+      });
+    } catch (error) {
+      console.error('Error creating stack:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create stack",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRateStack = async (stackId: string, rating: number, review?: string) => {
+    try {
+      const updatedStack = await api.stacks.rate(stackId, rating, review);
+      setStacks(prev => prev.map(stack => 
+        stack._id === stackId ? updatedStack : stack
+      ));
+      toast({
+        title: "Success",
+        description: "Rating submitted successfully",
+      });
+    } catch (error) {
+      console.error('Error rating stack:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit rating",
+        variant: "destructive",
+      });
+    }
   };
 
   const sortedStacks = [...stacks].sort((a, b) => {
     if (sortBy === "rating") {
-      return b.rating - a.rating;
+      return b.averageRating - a.averageRating;
     }
-    return 0; // Keep original order for "recent"
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl text-red-500">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,14 +152,14 @@ const Index = () => {
             Explore and learn about cognitive enhancement supplements and stacks
           </p>
           <div className="flex justify-center">
-            <SearchBar />
+            <SearchBar onSearch={handleSearch} />
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex">
-        <FilterSidebar />
+        <FilterSidebar onCategoryChange={handleCategoryFilter} />
         
         <main className="flex-1 container py-8">
           <Tabs defaultValue="nootropics" className="mb-8">
@@ -113,8 +169,11 @@ const Index = () => {
             </TabsList>
             <TabsContent value="nootropics">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockNootropics.map((nootropic, index) => (
-                  <NootropicCard key={index} {...nootropic} />
+                {filteredNootropics.map((nootropic) => (
+                  <NootropicCard 
+                    key={`nootropic-${nootropic.substanceName}`}
+                    {...nootropic}
+                  />
                 ))}
               </div>
             </TabsContent>
@@ -131,8 +190,12 @@ const Index = () => {
                 </select>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedStacks.map((stack, index) => (
-                  <NootropicStack key={index} {...stack} />
+                {sortedStacks.map((stack) => (
+                  <NootropicStack
+                    key={stack._id}
+                    stack={stack}
+                    onRate={(rating, review) => handleRateStack(stack._id, rating, review)}
+                  />
                 ))}
               </div>
             </TabsContent>
